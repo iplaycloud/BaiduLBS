@@ -346,12 +346,16 @@ public class RouteRecordService extends Service {
 		mLocationClient.stop();
 
 		// 服务销毁时，保存轨迹点到文件
-		if (isDebug) {
-			Toast.makeText(getApplicationContext(), "Saving Route Files",
-					Toast.LENGTH_SHORT).show();
+		if (list.size() >= 2) {
+			String saveString = adapter.setJsonString(list);
+			writeFileSdcard(getFilePath(), saveString);
+			if (isDebug)
+				Toast.makeText(getApplicationContext(), "saving route files",
+						Toast.LENGTH_SHORT).show();
+		} else if (isDebug) {
+			Toast.makeText(getApplicationContext(),
+					"Route point is less than 2", Toast.LENGTH_SHORT).show();
 		}
-		String saveString = adapter.setJsonString(list);
-		writeFileSdcard(getFilePath(), saveString);
 	}
 
 }
