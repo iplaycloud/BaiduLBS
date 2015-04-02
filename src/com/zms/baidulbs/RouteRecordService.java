@@ -213,7 +213,9 @@ public class RouteRecordService extends Service {
 		String format = ".json";
 		if (isDebug)
 			format = ".txt";
-		return ROUTE_PATH + startTime + "-" + stopTime + format;
+		return ROUTE_PATH + startTime + "-"
+				+ stopTime.substring(stopTime.length() - 6, stopTime.length())
+				+ format;
 	}
 
 	class MyLocationListener implements BDLocationListener {

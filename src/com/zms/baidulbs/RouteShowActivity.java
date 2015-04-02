@@ -59,6 +59,7 @@ public class RouteShowActivity extends Activity {
 		Bundle extras = getIntent().getExtras();
 		if (extras != null) {
 			filePath = extras.getString("filePath");
+			setTitle(filePath.substring(0, filePath.length() - 4));
 		} else {
 			Toast.makeText(getApplicationContext(), "轨迹文件不存在",
 					Toast.LENGTH_SHORT).show();
