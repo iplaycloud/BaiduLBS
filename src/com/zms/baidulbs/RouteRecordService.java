@@ -34,26 +34,18 @@ import com.google.gson.reflect.TypeToken;
 
 public class RouteRecordService extends Service {
 	private LocationClient mLocationClient;
-	private final String ROUTE_PATH = Environment.getExternalStorageDirectory()
-			.getPath() + "/Route/";
+	private final String ROUTE_PATH = "/sdcard/Route/";
 	private String startTime = "";
 	private String stopTime = "";
 
 	private List<RoutePoint> list = new ArrayList<RoutePoint>();
 	private RouteAdapter adapter = new RouteAdapter();
 
-	private int startId = 1; // 轨迹点初始ID
-	private int defaultDelay = 500; // 采集轨迹点间隔(ms)
-	private final static double ERROR_CODE = 55.555;
+	private int scanSpan = 1000; // 采集轨迹点间隔(ms)
+	private final static double ERROR_CODE = 0.0;
 	private double routeLng, routeLat;
 
-	private boolean isEncrypt = true; // true:读取百度加密经纬度 false:读取设备提供经纬度
 	private boolean isDebug = true;
-
-	// 设备定位经纬度
-	private enum DeviceLocType {
-		LATITUDE, LONGITUDE
-	}
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -66,7 +58,7 @@ public class RouteRecordService extends Service {
 	public void onCreate() {
 		super.onCreate();
 
-		InitLocation(LocationMode.Hight_Accuracy, "bd09ll", defaultDelay, false);
+		InitLocation(LocationMode.Hight_Accuracy, "bd09ll", scanSpan, false);
 		// 初始化路径
 		File filestoreMusic = new File(ROUTE_PATH);
 		if (!filestoreMusic.exists()) {
@@ -87,7 +79,7 @@ public class RouteRecordService extends Service {
 		public void run() {
 			while (true) {
 				try {
-					Thread.sleep(defaultDelay);
+					Thread.sleep(scanSpan);
 					Message message = new Message();
 					message.what = 1;
 					recordHandler.sendMessage(message);
@@ -109,19 +101,9 @@ public class RouteRecordService extends Service {
 	};
 
 	private void startRecordRoute() {
-		// 获取设备经纬度
-		if (!isEncrypt) {
-			routeLat = getDeviceLocation(DeviceLocType.LATITUDE);
-			routeLng = getDeviceLocation(DeviceLocType.LONGITUDE);
-			if (isDebug)
-				Toast.makeText(getApplicationContext(),
-						"Device Loc:" + routeLat + "," + routeLng,
-						Toast.LENGTH_SHORT).show();
-		}
 
 		RoutePoint routePoint = new RoutePoint();
-		if (routeLng != 5.55 && routeLat != 5.55 && routeLng != 0.0
-				&& routeLat != 0.0) {
+		if (routeLng != 0.0 && routeLat != 0.0) {
 			if (list.size() > 0
 					&& list.get(list.size() - 1).getLat() == routeLat
 					&& (list.get(list.size() - 1).getLng() == routeLng)) {
@@ -131,90 +113,16 @@ public class RouteRecordService extends Service {
 					// Toast.LENGTH_SHORT).show();
 				}
 			} else {
-				routePoint.setId(startId++);
+				// routePoint.setId(startId++);
 				routePoint.setLng(routeLng);
 				routePoint.setLat(routeLat);
+				Toast.makeText(getApplicationContext(),
+						"Lat" + routeLat + "-Lng:" + routeLng,
+						Toast.LENGTH_SHORT).show();
 				list.add(routePoint);
 			}
 		}
 	}
-
-	/**
-	 * 获取设备提供的经纬度，Network或GPS
-	 * 
-	 * @param type
-	 *            请求经度还是纬度
-	 * @return
-	 */
-	private double getDeviceLocation(DeviceLocType type) {
-		double deviceLat = ERROR_CODE;
-		double deviceLng = ERROR_CODE;
-
-		LocationManager locationManager = (LocationManager) getSystemService(getApplicationContext().LOCATION_SERVICE);
-		if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-			Location location = locationManager
-					.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-			if (location != null) {
-				deviceLat = location.getLatitude();
-				deviceLng = location.getLongitude();
-			} else {
-				locationManager.requestLocationUpdates(
-						LocationManager.NETWORK_PROVIDER, defaultDelay, 0,
-						new deviceLocationListener());
-				Location location1 = locationManager
-						.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-				if (location1 != null) {
-					deviceLat = location1.getLatitude(); // 经度
-					deviceLng = location1.getLongitude(); // 纬度
-				}
-			}
-		} else {
-			locationManager.requestLocationUpdates(
-					LocationManager.NETWORK_PROVIDER, defaultDelay, 0,
-					new deviceLocationListener());
-			Location location = locationManager
-					.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-			if (location != null) {
-				deviceLat = location.getLatitude(); // 经度
-				deviceLng = location.getLongitude(); // 纬度
-			}
-		}
-		if (type == DeviceLocType.LATITUDE)
-			return deviceLat;
-		else if (type == DeviceLocType.LONGITUDE)
-			return deviceLng;
-		else
-			return ERROR_CODE;
-	}
-
-	/**
-	 * 设备位置监听器
-	 * 
-	 */
-	class deviceLocationListener implements LocationListener {
-
-		// Provider的状态在可用、暂时不可用和无服务三个状态直接切换时触发此函数
-		public void onStatusChanged(String provider, int status, Bundle extras) {
-		}
-
-		// Provider被enable时触发此函数，比如GPS被打开
-		@Override
-		public void onProviderEnabled(String provider) {
-
-		}
-
-		// Provider被disable时触发此函数，比如GPS被关闭
-		@Override
-		public void onProviderDisabled(String provider) {
-		}
-
-		// 当坐标改变时触发此函数，如果Provider传进相同的坐标，它就不会被触发
-		@Override
-		public void onLocationChanged(Location location) {
-			// routeLat = location.getLatitude(); // 经度
-			// routeLng = location.getLongitude(); // 纬度
-		}
-	};
 
 	public String readFileSdcard(String fileName) {
 		String res = "";
@@ -228,7 +136,6 @@ public class RouteRecordService extends Service {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		// 此处为res 赋值空格即" "而不是"",否则运行不通过。
 		if (res.equals("")) {
 			res = " ";
 		}
@@ -262,7 +169,7 @@ public class RouteRecordService extends Service {
 	 * @param tempCoor
 	 *            gcj02-国测局加密经纬度坐标 bd09ll-百度加密经纬度坐标 bd09-百度加密墨卡托坐标
 	 * @param frequence
-	 *            间隔时间
+	 *            MIN_SCAN_SPAN = 1000; MIN_SCAN_SPAN_NETWORK = 3000;
 	 * @param isNeedAddress
 	 *            是否需要地址
 	 */
@@ -314,29 +221,8 @@ public class RouteRecordService extends Service {
 		@Override
 		public void onReceiveLocation(BDLocation location) {
 			// 读取百度加密经纬度
-			if (isEncrypt) {
-				routeLng = location.getLongitude();
-				routeLat = location.getLatitude();
-
-			}
-			// StringBuffer sb = new StringBuffer(256);
-			// sb.append("time : "+location.getTime());
-			// sb.append("\nerror code : ");
-			// sb.append(location.getLocType());
-			// sb.append("\nlatitude : "+location.getLatitude());
-			// sb.append("\nlongitude : "+location.getLongitude());
-			// sb.append("\nradius : "+location.getRadius());
-			// if (location.getLocType() == BDLocation.TypeGpsLocation) {
-			// sb.append("\nspeed : "+location.getSpeed());
-			// sb.append("\nsatellite : "+location.getSatelliteNumber());
-			// sb.append("\ndirection : "+location.getDirection());
-			// sb.append("\naddr : "+location.getAddrStr());
-			// } else if (location.getLocType() ==
-			// BDLocation.TypeNetWorkLocation) {
-			// sb.append("\naddr : "+location.getAddrStr());
-			// sb.append("\noperationers : "+location.getOperators());
-			// }
-			// logMsg(sb.toString());
+			routeLng = location.getLongitude();
+			routeLat = location.getLatitude();
 		}
 	}
 
@@ -350,7 +236,8 @@ public class RouteRecordService extends Service {
 			String saveString = adapter.setJsonString(list);
 			writeFileSdcard(getFilePath(), saveString);
 			if (isDebug)
-				Toast.makeText(getApplicationContext(), "saving route files",
+				Toast.makeText(getApplicationContext(),
+						"saving route files with " + list.size() + " points",
 						Toast.LENGTH_SHORT).show();
 		} else if (isDebug) {
 			Toast.makeText(getApplicationContext(),

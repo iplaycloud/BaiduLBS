@@ -60,7 +60,9 @@ public class RouteShowActivity extends Activity {
 		if (extras != null) {
 			filePath = extras.getString("filePath");
 		} else {
-			filePath = "20150331_015549.txt";
+			Toast.makeText(getApplicationContext(), "轨迹文件不存在",
+					Toast.LENGTH_SHORT).show();
+			finish();
 		}
 
 		mMapView = (MapView) findViewById(R.id.routeMap);
@@ -70,6 +72,12 @@ public class RouteShowActivity extends Activity {
 
 	}
 
+	/**
+	 * 从文件读取经纬度表单
+	 * 
+	 * @param fileName
+	 * @return
+	 */
 	public List<RoutePoint> readFileSdcard(String fileName) {
 		String res = "";
 		try {
@@ -130,27 +138,25 @@ public class RouteShowActivity extends Activity {
 
 	public List<LatLng> getRoutePoints(String fileName) {
 
-		// 从文件读取经纬度表单
-		// fileName = "20150331_015549.txt";
 		List<RoutePoint> list = readFileSdcard(ROUTE_PATH + fileName);
-
-		// 优化
 		list = optimizePoints(list);
 
-		if (list.size() < 1) {
-			// TODO:Runtime Error
-		}
 		List<LatLng> points = new ArrayList<LatLng>(list.size());
-		for (int i = 1; i < list.size(); i++) { // StartID:2
+		for (int i = 0; i < list.size(); i++) {
 			i = i + getOffset() - 1;
 			if (i < list.size())
 				points.add(new LatLng(list.get(i).getLat(), list.get(i)
 						.getLng()));
 		}
 		return points;
-
 	}
 
+	/**
+	 * 轨迹点经纬度优化，使连线平滑
+	 * 
+	 * @param inPoint
+	 * @return
+	 */
 	public List<RoutePoint> optimizePoints(List<RoutePoint> inPoint) {
 		int size = inPoint.size();
 		List<RoutePoint> outPoint;
@@ -248,13 +254,22 @@ public class RouteShowActivity extends Activity {
 		}
 	}
 
+	/**
+	 * 读取设置的缩放倍数
+	 * 
+	 * @return
+	 */
 	public float getZoomLevel() {
-		// 读取设置的缩放倍数
 		SharedPreferences sharedPreferences = getSharedPreferences(
 				"RouteSetting", getApplicationContext().MODE_PRIVATE);
 		return sharedPreferences.getFloat("zoomLevel", 19f);
 	}
 
+	/**
+	 * 读取轨迹点采样偏移量
+	 * 
+	 * @return
+	 */
 	public int getOffset() {
 		SharedPreferences sharedPreferences = getSharedPreferences(
 				"RouteSetting", getApplicationContext().MODE_PRIVATE);
