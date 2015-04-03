@@ -19,11 +19,7 @@ import com.baidu.location.LocationClientOption.LocationMode;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Bundle;
-import android.os.Environment;
+import android.content.SharedPreferences.Editor;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -45,18 +41,26 @@ public class RouteRecordService extends Service {
 	private final static double ERROR_CODE = 0.0;
 	private double routeLng, routeLat;
 
-	private boolean isDebug = true;
+	private boolean isDebug;
+	private SharedPreferences sharedPreferences;
+	private Editor editor;
 
 	@Override
 	public IBinder onBind(Intent intent) {
 		// TODO Auto-generated method stub
 		return null;
-		// 3600
 	}
 
 	@Override
 	public void onCreate() {
 		super.onCreate();
+
+		// Update Running State
+		sharedPreferences = getSharedPreferences("RouteSetting",
+				getApplicationContext().MODE_PRIVATE);
+		editor = sharedPreferences.edit();
+		editor.putBoolean("isRun", true);
+		isDebug = isDebug();
 
 		InitLocation(LocationMode.Hight_Accuracy, "bd09ll", scanSpan, false);
 		// 初始化路径
@@ -103,7 +107,8 @@ public class RouteRecordService extends Service {
 	private void startRecordRoute() {
 
 		RoutePoint routePoint = new RoutePoint();
-		if (routeLng != 0.0 && routeLat != 0.0) {
+		if (routeLng != 0.0 && routeLat != 0.0 && routeLng != 4.9E-324
+				&& routeLat != 4.9E-324) {
 			if (list.size() > 0
 					&& list.get(list.size() - 1).getLat() == routeLat
 					&& (list.get(list.size() - 1).getLng() == routeLng)) {
@@ -116,9 +121,11 @@ public class RouteRecordService extends Service {
 				// routePoint.setId(startId++);
 				routePoint.setLng(routeLng);
 				routePoint.setLat(routeLat);
-				Toast.makeText(getApplicationContext(),
-						"Lat" + routeLat + "-Lng:" + routeLng,
-						Toast.LENGTH_SHORT).show();
+				if (isDebug) {
+					Toast.makeText(getApplicationContext(),
+							"Lat" + routeLat + "-Lng:" + routeLng,
+							Toast.LENGTH_SHORT).show();
+				}
 				list.add(routePoint);
 			}
 		}
@@ -213,9 +220,7 @@ public class RouteRecordService extends Service {
 		String format = ".json";
 		if (isDebug)
 			format = ".txt";
-		return ROUTE_PATH + startTime + "-"
-				+ stopTime.substring(stopTime.length() - 6, stopTime.length())
-				+ format;
+		return ROUTE_PATH + startTime + "-" + stopTime + format;
 	}
 
 	class MyLocationListener implements BDLocationListener {
@@ -226,6 +231,10 @@ public class RouteRecordService extends Service {
 			routeLng = location.getLongitude();
 			routeLat = location.getLatitude();
 		}
+	}
+
+	public boolean isDebug() {
+		return sharedPreferences.getBoolean("isDebug", false);
 	}
 
 	@Override
@@ -245,6 +254,9 @@ public class RouteRecordService extends Service {
 			Toast.makeText(getApplicationContext(),
 					"Route point is less than 2", Toast.LENGTH_SHORT).show();
 		}
+
+		// Update Running State
+		editor.putBoolean("isRun", false);
 	}
 
 }

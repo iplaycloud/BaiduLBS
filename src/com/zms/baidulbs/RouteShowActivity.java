@@ -26,8 +26,6 @@ import com.baidu.mapapi.map.PolylineOptions;
 import com.baidu.mapapi.map.BaiduMap.OnMarkerClickListener;
 import com.baidu.mapapi.map.InfoWindow.OnInfoWindowClickListener;
 import com.baidu.mapapi.model.LatLng;
-import com.baidu.mapapi.search.route.DrivingRouteLine;
-import com.baidu.mapapi.search.route.DrivingRouteLine.DrivingStep;
 import com.zms.baidulbs.R;
 
 public class RouteShowActivity extends Activity {

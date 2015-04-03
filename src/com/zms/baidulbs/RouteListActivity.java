@@ -10,6 +10,7 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.MenuItem;
@@ -114,7 +115,7 @@ public class RouteListActivity extends Activity {
 		// add(int groupId, int itemId, int order,
 		// CharSequence title)
 		menu.add(0, 0, 0, "删除");
-		menu.add(0, 1, 1, "分享");
+		menu.add(0, 1, 1, "编辑");
 	}
 
 	@Override
@@ -134,6 +135,14 @@ public class RouteListActivity extends Activity {
 			return true;
 		case 1:
 			// 分享
+			// Intent intent = new Intent("android.intent.action.VIEW");
+			Intent intent = new Intent("android.intent.action.EDIT");
+			//intent.addCategory("android.intent.category.DEFAULT");
+			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			Uri uri = Uri.fromFile(new File(ROUTE_PATH
+					+ adapter.getItem(menuInfo.position)));
+			intent.setDataAndType(uri, "text/plain");
+			startActivity(intent);
 			return true;
 		}
 		return false;
