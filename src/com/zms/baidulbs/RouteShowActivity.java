@@ -1,14 +1,24 @@
 package com.zms.baidulbs;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.http.util.EncodingUtils;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -24,6 +34,7 @@ import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.map.PolylineOptions;
 import com.baidu.mapapi.map.BaiduMap.OnMarkerClickListener;
+import com.baidu.mapapi.map.BaiduMap.SnapshotReadyCallback;
 import com.baidu.mapapi.map.InfoWindow.OnInfoWindowClickListener;
 import com.baidu.mapapi.model.LatLng;
 import com.zms.baidulbs.R;
@@ -34,11 +45,13 @@ public class RouteShowActivity extends Activity {
 	private InfoWindow mInfoWindow;
 	private Marker mMarkerStart;
 	private Marker mMarkerEnd;
+	private Button btnShare, btnBack;
 
 	public double mRouteLatitude = 0.0;
 	public double mRouteLongitude = 0.0;
 
 	private final String ROUTE_PATH = "/sdcard/Route/";
+	private String filePath = "";
 	private RouteAdapter routeAdapter = new RouteAdapter();
 
 	// 初始化全局 bitmap 信息，不用时及时 recycle
@@ -51,13 +64,22 @@ public class RouteShowActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.route_show);
 
-		String filePath = "";
+		// Hide Status Bar
+		View decorView = getWindow().getDecorView();
+		decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
+
+		btnShare = (Button) findViewById(R.id.btnShare);
+		btnBack = (Button) findViewById(R.id.btnBack);
+		btnShare.setOnClickListener(new MyOnClickListener());
+		btnBack.setOnClickListener(new MyOnClickListener());
+
 		Bundle extras = getIntent().getExtras();
 		if (extras != null) {
 			filePath = extras.getString("filePath");
-			setTitle(filePath.substring(0, filePath.length() - 4));
+			// setTitle(filePath.substring(0, filePath.length() - 4));
 		} else {
 			Toast.makeText(getApplicationContext(), "轨迹文件不存在",
 					Toast.LENGTH_SHORT).show();
@@ -69,6 +91,51 @@ public class RouteShowActivity extends Activity {
 		mBaiduMap.setOnMarkerClickListener(new MyOnMarkerClickListener());
 		addRouteToMap(filePath);
 
+	}
+
+	class MyOnClickListener implements View.OnClickListener {
+		@Override
+		public void onClick(View v) {
+			switch (v.getId()) {
+			case R.id.btnShare:
+				mBaiduMap.snapshot(new SnapshotReadyCallback() {
+					public void onSnapshotReady(Bitmap snapshot) {
+						File file = new File(ROUTE_PATH + filePath + ".png");
+						FileOutputStream out;
+						try {
+							out = new FileOutputStream(file);
+							if (snapshot.compress(Bitmap.CompressFormat.PNG,
+									100, out)) {
+								out.flush();
+								out.close();
+							}
+							Intent intent = new Intent(Intent.ACTION_SEND);
+							Uri uri = Uri.fromFile(file);
+							intent.setType("image/png");
+							intent.putExtra(Intent.EXTRA_STREAM, uri);
+							intent.putExtra(Intent.EXTRA_TITLE, "分享轨迹图到");
+							Intent chooserIntent = Intent.createChooser(intent,
+									"分享轨迹");
+							if (chooserIntent == null) {
+								return;
+							}
+							try {
+								startActivity(chooserIntent);
+							} catch (android.content.ActivityNotFoundException ex) {
+							}
+						} catch (FileNotFoundException e) {
+							e.printStackTrace();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				});
+				break;
+			case R.id.btnBack:
+				finish();
+				break;
+			}
+		}
 	}
 
 	/**

@@ -47,7 +47,11 @@ public class RouteListActivity extends Activity {
 			File[] files = new File(ROUTE_PATH).listFiles();
 			final List<String> fileNameList = new ArrayList<String>();
 			for (File file : files) {
-				fileNameList.add(file.getName());
+				String fileName = file.getName();
+				String format = fileName.substring(
+						fileName.lastIndexOf('.') + 1, fileName.length());
+				if (format.equals("txt") || format.equals("json"))
+					fileNameList.add(file.getName());
 			}
 
 			// (context, resource, textViewResourceId, objects)
@@ -137,7 +141,7 @@ public class RouteListActivity extends Activity {
 			// 分享
 			// Intent intent = new Intent("android.intent.action.VIEW");
 			Intent intent = new Intent("android.intent.action.EDIT");
-			//intent.addCategory("android.intent.category.DEFAULT");
+			// intent.addCategory("android.intent.category.DEFAULT");
 			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			Uri uri = Uri.fromFile(new File(ROUTE_PATH
 					+ adapter.getItem(menuInfo.position)));

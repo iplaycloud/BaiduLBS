@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <resources>
 
-    <string name="app_name">LBS</string>
+    <string name="app_name">轨迹记录</string>
+    <string name="btn_screenshot">分享</string>
 
 </resources>
